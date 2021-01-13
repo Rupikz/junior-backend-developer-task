@@ -1,5 +1,5 @@
-import * as Koa from 'koa';
+import { Context } from 'koa';
 
-export default async function refreshAccessToken(context: Koa.Context): Promise<void> {
+export default async function refreshAccessToken(context: Context): Promise<void> {
   console.log('refreshAccessToken');
 }

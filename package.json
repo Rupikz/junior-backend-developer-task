@@ -2,6 +2,7 @@
   "name": "junior-backend-developer-task",
   "version": "0.0.1",
   "main": "./dist/app.ts",
+  "description": "",
   "scripts": {
     "start": "node ./dist/src/app.js",
     "dev": "nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node' src/app.ts",
@@ -35,10 +36,12 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "dotenv": "^8.2.0",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
     "koa-jwt": "^2.2.4",
-    "koa-router": "^10.0.0"
-  },
-  "description": ""
+    "koa-router": "^10.0.0",
+    "mongodb": "^3.6.3",
+    "typeorm": "^0.2.30"
+  }
 }
