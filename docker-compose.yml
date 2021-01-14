@@ -1,0 +1,33 @@
+version: '3'
+services:
+  backend:
+    container_name: nodejs
+    restart: always
+    build: ./
+    environment:
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOSTNAME=mongo
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/usr/src/app
+      - ./error.log:/usr/src/app/error.log
+    links:
+      - mongo
+    networks:
+      - app-network
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - '${DB_PORT}:27017'
+    volumes:
+      - ./data:/data/db
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge

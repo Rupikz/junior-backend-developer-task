@@ -10,8 +10,6 @@ const bootstrap = async (): Promise<void> => {
   const app = new Koa();
   const router = new Router();
 
-  await createConnection();
-
   appRoutes.forEach(route => router[route.method](route.path, route.action));
   app.use(router.routes());
   app.use(router.allowedMethods());
@@ -20,4 +18,6 @@ const bootstrap = async (): Promise<void> => {
   app.listen(config.PORT, () => console.log(`Listening on port ${config.PORT}`));
 };
 
-bootstrap();
+createConnection()
+  .then(bootstrap)
+  .catch(console.error);

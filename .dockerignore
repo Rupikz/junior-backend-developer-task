@@ -1,0 +1,7 @@
+*
+
+!/package*.json
+!/ts*.json
+!/ormconfig.ts
+!/src
+!/.env
