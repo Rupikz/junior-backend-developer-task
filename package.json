@@ -8,12 +8,12 @@
     "url": "git://github.com/Rupikz/junior-backend-developer-task.git"
   },
   "scripts": {
-    "start": "node ./dist/src/app.js",
+    "start": "node dist/src/app.js",
     "dev": "nodemon --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node' src/app.ts",
     "lint": "npm run lint:json && npm run lint:ts",
     "lint:json": "prettier --list-different .eslintrc *.json",
     "lint:ts": "eslint --ext .js,.ts --ignore-path .gitignore .",
-    "build": "tsc -b"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
