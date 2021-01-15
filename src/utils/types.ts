@@ -6,18 +6,6 @@ export class AccessTokenPayload {
   type: string;
 }
 
-export class RefreshTokenPayload {
-  type: string;
-}
-
-export class AccessTokenDto {
-  token: string;
-}
-
-export class RefreshTokenDto {
-  token: string;
-}
-
 export class GetTokenDto {
   accessToken: string;
   refreshToken: string;

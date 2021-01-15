@@ -20,16 +20,7 @@ const generateRefreshToken = (): string => {
   return jwt.sign(data, JWT_SECRET_KEY, options);
 };
 
-export const addRefreshTokenDb = async (token: string, userId: ObjectID): Promise<void> => {
-  // const btoken = await bcrypt.hash(token, SALT_ROUNDS);
-
-  const tokenInstance = new Token();
-  tokenInstance['user_id'] = userId;
-  tokenInstance['token'] = token;
-  await tokenInstance.save();
-};
-
-export const getTokens = (userId: ObjectID): GetTokenDto => {
+const getTokens = (userId: ObjectID): GetTokenDto => {
   const accessToken = generateAccessToken({ user_id: userId, type: 'access' });
   const refreshToken = generateRefreshToken();
 
@@ -37,6 +28,42 @@ export const getTokens = (userId: ObjectID): GetTokenDto => {
     accessToken,
     refreshToken
   };
+};
+
+const addRefreshTokenDb = async (token: string, userId: ObjectID): Promise<void> => {
+  const tokenInstance = new Token();
+  tokenInstance['user_id'] = userId;
+  tokenInstance['token'] = token;
+  await tokenInstance.save();
+};
+
+const updateTokenDb = async (tokenId: ObjectID, userId: ObjectID): Promise<GetTokenDto> => {
+  const tokens = getTokens(userId);
+  await Token.delete(tokenId);
+  await addRefreshTokenDb(tokens.refreshToken, userId);
+
+  return tokens;
+};
+
+const findTokenDb = async (userId): Promise<Token> => {
+  return await Token.findOne({
+    where: {
+      user_id: userId
+    }
+  });
+};
+
+export const addNewTokensDb = async (userId: ObjectID): Promise<GetTokenDto> => {
+  const oldToken = await findTokenDb(userId);
+
+  if (oldToken) {
+    return await updateTokenDb(oldToken._id, userId);
+  }
+
+  const tokens = getTokens(userId);
+  await addRefreshTokenDb(tokens.refreshToken, userId);
+
+  return tokens;
 };
 
 export const updateTokens = async (ctx: Context, userId: ObjectID, refreshToken: string): Promise<GetTokenDto> => {
@@ -50,13 +77,9 @@ export const updateTokens = async (ctx: Context, userId: ObjectID, refreshToken:
     return;
   }
 
-  const { token: btoken, _id: oldTokenId } = await Token.findOne({
-    where: {
-      user_id: userId
-    }
-  });
+  const oldToken = await findTokenDb(userId);
 
-  if (!btoken) {
+  if (!oldToken) {
     ctx.status = 400;
     ctx.body = {
       error: 'Old refresh token not find'
@@ -66,9 +89,9 @@ export const updateTokens = async (ctx: Context, userId: ObjectID, refreshToken:
 
   // const checkedToken = await bcrypt.compare(refreshToken, btoken);
 
-  const checkedToken = refreshToken === btoken;
+  console.log(refreshToken, oldToken.token, refreshToken === oldToken.token);
 
-  if (!checkedToken) {
+  if (refreshToken !== oldToken.token) {
     ctx.status = 400;
     ctx.body = {
       error: 'Invalid refresh token'
@@ -76,10 +99,7 @@ export const updateTokens = async (ctx: Context, userId: ObjectID, refreshToken:
     return;
   }
 
-  const newTokens = getTokens(userId);
-
-  await Token.delete(oldTokenId);
-  await addRefreshTokenDb(newTokens.refreshToken, userId);
+  const newTokens = await updateTokenDb(oldToken._id, userId);
 
   return newTokens;
 };

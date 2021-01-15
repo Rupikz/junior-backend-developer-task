@@ -1,6 +1,6 @@
 import { ObjectID } from 'typeorm';
 import { Context } from 'koa';
-import { getTokens, addRefreshTokenDb } from '../utils/utils';
+import { addNewTokensDb } from '../utils/utils';
 
 export default async function getAccessToken(ctx: Context): Promise<void> {
   const userId: ObjectID = ctx.request.query.guid;
@@ -13,8 +13,7 @@ export default async function getAccessToken(ctx: Context): Promise<void> {
     return;
   }
 
-  const tokens = getTokens(userId);
-  await addRefreshTokenDb(tokens.refreshToken, userId);
+  const tokens = await addNewTokensDb(userId);
 
   ctx.status = 200;
   ctx.body = tokens;
