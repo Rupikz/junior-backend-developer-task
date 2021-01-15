@@ -67,39 +67,43 @@ export const addNewTokensDb = async (userId: ObjectID): Promise<GetTokenDto> => 
 };
 
 export const updateTokens = async (ctx: Context, userId: ObjectID, refreshToken: string): Promise<GetTokenDto> => {
-  const parseRefreshToken = await jwt.verify(refreshToken, JWT_SECRET_KEY);
+  try {
+    const parseRefreshToken = await jwt.verify(refreshToken, JWT_SECRET_KEY);
 
-  if (parseRefreshToken.type !== 'refresh') {
-    ctx.status = 400;
-    ctx.body = {
-      error: 'Wrong type token'
-    };
-    return;
-  }
+    if (parseRefreshToken.type !== 'refresh') {
+      ctx.status = 400;
+      ctx.body = {
+        error: 'Wrong type token'
+      };
+      return;
+    }
 
-  const oldToken = await findTokenDb(userId);
+    const oldToken = await findTokenDb(userId);
 
-  if (!oldToken) {
-    ctx.status = 400;
-    ctx.body = {
-      error: 'Old refresh token not find'
-    };
-    return;
-  }
+    if (!oldToken) {
+      ctx.status = 400;
+      ctx.body = {
+        error: 'Old refresh token not find'
+      };
+      return;
+    }
 
-  // const checkedToken = await bcrypt.compare(refreshToken, btoken);
+    if (refreshToken !== oldToken.token) {
+      ctx.status = 400;
+      ctx.body = {
+        error: 'Invalid refresh token'
+      };
+      return;
+    }
 
-  console.log(refreshToken, oldToken.token, refreshToken === oldToken.token);
+    const newTokens = await updateTokenDb(oldToken._id, userId);
 
-  if (refreshToken !== oldToken.token) {
+    return newTokens;
+  } catch (error) {
     ctx.status = 400;
     ctx.body = {
       error: 'Invalid refresh token'
     };
     return;
   }
-
-  const newTokens = await updateTokenDb(oldToken._id, userId);
-
-  return newTokens;
 };
