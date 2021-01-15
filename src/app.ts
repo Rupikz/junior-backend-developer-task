@@ -3,7 +3,7 @@ import * as Router from 'koa-router';
 import * as bodyParser from 'koa-bodyparser';
 import { createConnection } from 'typeorm';
 
-import config from './config/config';
+import { PORT } from './config/config';
 import appRoutes from './routes';
 
 const bootstrap = async (): Promise<void> => {
@@ -15,7 +15,7 @@ const bootstrap = async (): Promise<void> => {
   app.use(router.allowedMethods());
   app.use(bodyParser());
 
-  app.listen(config.PORT, () => console.log(`Listening on port ${config.PORT}`));
+  app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 };
 
 createConnection()

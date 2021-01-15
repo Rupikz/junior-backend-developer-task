@@ -1,13 +1,24 @@
-import { getManager } from 'typeorm';
-import { Token } from '../entity/token.entity';
+import { ObjectID } from 'typeorm';
 import { Context } from 'koa';
+import { getTokens, addRefreshTokenDb } from '../utils/utils';
 
 export default async function getAccessToken(ctx: Context): Promise<void> {
-  const token = new Token();
-  token.token = 'test';
-  token.createdAt = new Date();
-  await token.save();
+  const userId: ObjectID = ctx.request.query.guid;
 
-  const result = await getManager().find(Token);
-  console.log(result);
+  if (typeof userId !== 'string') {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'GUID not found'
+    };
+    return;
+  }
+
+  const tokens = getTokens(userId);
+  await addRefreshTokenDb(tokens.refreshToken, userId);
+
+  ctx.status = 200;
+  ctx.body = {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken.token
+  };
 }
