@@ -7,8 +7,5 @@ export class Token extends RootEntity {
   user_id: ObjectID;
 
   @Column()
-  token_id: string;
-
-  @Column()
   token: string;
 }

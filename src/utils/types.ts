@@ -7,7 +7,6 @@ export class AccessTokenPayload {
 }
 
 export class RefreshTokenPayload {
-  id: ObjectID;
   type: string;
 }
 
@@ -16,11 +15,10 @@ export class AccessTokenDto {
 }
 
 export class RefreshTokenDto {
-  id: string;
   token: string;
 }
 
 export class GetTokenDto {
   accessToken: string;
-  refreshToken: RefreshTokenDto;
+  refreshToken: string;
 }

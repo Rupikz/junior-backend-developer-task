@@ -17,8 +17,5 @@ export default async function getAccessToken(ctx: Context): Promise<void> {
   await addRefreshTokenDb(tokens.refreshToken, userId);
 
   ctx.status = 200;
-  ctx.body = {
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken.token
-  };
+  ctx.body = tokens;
 }

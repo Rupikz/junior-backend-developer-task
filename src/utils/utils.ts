@@ -1,48 +1,31 @@
-import { v4 as uuidv4 } from 'uuid';
+import { Context } from 'koa';
 import * as jwt from 'jsonwebtoken';
-import * as bcrypt from 'bcrypt';
-import { getMongoRepository, ObjectID } from 'typeorm';
+import { ObjectID } from 'typeorm';
 
 import { Token } from '../entity/token.entity';
-import { AccessTokenPayload, RefreshTokenDto, GetTokenDto } from '../utils/types';
-import { JWT_SECRET_KEY, JWT_TIME_AT, JWT_TIME_RT, JWT_ALGORITHM, SALT_ROUNDS } from '../config/config';
+import { AccessTokenPayload, GetTokenDto } from '../utils/types';
+import { JWT_SECRET_KEY, JWT_TIME_AT, JWT_TIME_RT, JWT_ALGORITHM } from '../config/config';
 
 const generateAccessToken = (data: AccessTokenPayload): string => {
   const options = { algorithm: JWT_ALGORITHM, expiresIn: JWT_TIME_AT };
   return jwt.sign(data, JWT_SECRET_KEY, options);
 };
 
-const generateRefreshToken = (): RefreshTokenDto => {
+const generateRefreshToken = (): string => {
   const data = {
-    id: uuidv4(),
     type: 'refresh'
   };
-
   const options = { algorithm: JWT_ALGORITHM, expiresIn: JWT_TIME_RT };
 
-  return {
-    id: data.id,
-    token: jwt.sign(data, JWT_SECRET_KEY, options)
-  };
+  return jwt.sign(data, JWT_SECRET_KEY, options);
 };
 
-export const replaceRefreshTokenDb = async (tokenId: string, userId: ObjectID): Promise<void> => {
-  await getMongoRepository(Token)
-    .findOneAndDelete({
-      where: {
-        user_id: userId
-      }
-    })
-    .then(() => Token.create({ token_id: tokenId, user_id: userId }));
-};
-
-export const addRefreshTokenDb = async (token: RefreshTokenDto, userId: ObjectID): Promise<void> => {
-  const btoken = await bcrypt.hash(token.token, SALT_ROUNDS);
+export const addRefreshTokenDb = async (token: string, userId: ObjectID): Promise<void> => {
+  // const btoken = await bcrypt.hash(token, SALT_ROUNDS);
 
   const tokenInstance = new Token();
   tokenInstance['user_id'] = userId;
-  tokenInstance['token_id'] = token.id;
-  tokenInstance['token'] = btoken;
+  tokenInstance['token'] = token;
   await tokenInstance.save();
 };
 
@@ -56,12 +39,47 @@ export const getTokens = (userId: ObjectID): GetTokenDto => {
   };
 };
 
-export const updateTokens = async (userId: ObjectID): Promise<GetTokenDto> => {
-  const tokens = getTokens(userId);
-  await replaceRefreshTokenDb(tokens.refreshToken.id, userId);
+export const updateTokens = async (ctx: Context, userId: ObjectID, refreshToken: string): Promise<GetTokenDto> => {
+  const parseRefreshToken = await jwt.verify(refreshToken, JWT_SECRET_KEY);
 
-  return {
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken
-  };
+  if (parseRefreshToken.type !== 'refresh') {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Wrong type token'
+    };
+    return;
+  }
+
+  const { token: btoken, _id: oldTokenId } = await Token.findOne({
+    where: {
+      user_id: userId
+    }
+  });
+
+  if (!btoken) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Old refresh token not find'
+    };
+    return;
+  }
+
+  // const checkedToken = await bcrypt.compare(refreshToken, btoken);
+
+  const checkedToken = refreshToken === btoken;
+
+  if (!checkedToken) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Invalid refresh token'
+    };
+    return;
+  }
+
+  const newTokens = getTokens(userId);
+
+  await Token.delete(oldTokenId);
+  await addRefreshTokenDb(newTokens.refreshToken, userId);
+
+  return newTokens;
 };
